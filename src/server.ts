@@ -59,6 +59,55 @@ server.tool("create-user","Create a new user in the database",{
     }
 });
 
+server.tool("delete-user","Delete a user from the database",{
+    id: z.number().describe("The ID of the user to delete")
+}, {
+    title: "Delete User",
+    readOnlyHint: false,
+    destructiveHint: true,
+    idempotentHint: false,
+    openWorldHint: true
+}, async (params) => {
+    try {
+        const users = await import("./data/user.json", {
+            with: { type: "json" }
+        }).then(m => m.default);
+
+        const index = users.findIndex(user => user.id === params.id);
+        if (index === -1) {
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `User with ID ${params.id} not found`
+                    }
+                ]
+            };
+        }
+
+        users.splice(index, 1);
+        await fs.writeFile("./src/data/user.json", JSON.stringify(users, null, 2));
+
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: `User ${params.id} deleted successfully`
+                }
+            ]
+        };
+    } catch (error) {
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: "Failed to delete user"
+                }
+            ]
+        };
+    }
+})
+
 
 async function createUser(user:{
     name:string,
